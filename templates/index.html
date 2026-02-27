@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>AI Python Tutor</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<nav>
+<h2>🐍 AI Python Tutor</h2>
+
+<div class="nav-buttons">
+<button onclick="showSection('explain')">Explanation</button>
+<button onclick="showSection('code')">Example</button>
+<button onclick="showSection('quiz')">Quiz</button>
+</div>
+</nav>
+
+
+<!-- ================= MAIN ================= -->
+<div class="main">
+
+<div class="input-box">
+<input id="topic" placeholder="Enter Python Topic (loops, list, function)">
+<button onclick="learn()">Teach</button>
+</div>
+
+<div id="loading">Generating lesson...</div>
+
+
+<!-- ========= EXPLANATION ========= -->
+<div id="explain" class="section active">
+
+<h3>📘 Explanation</h3>
+
+<div class="card">
+<h4>Definition</h4>
+<p id="definition"></p>
+</div>
+
+<div class="card">
+<h4>Syntax</h4>
+<pre id="syntax"></pre>
+</div>
+
+</div>
+
+
+<!-- ========= CODE ========= -->
+<div id="code" class="section">
+
+<h3>💻 Example</h3>
+
+<div class="card">
+<h4>Example Program</h4>
+<pre id="example"></pre>
+</div>
+
+<div class="card">
+<h4>Output</h4>
+<pre id="output"></pre>
+</div>
+
+</div>
+
+
+<!-- ========= QUIZ ========= -->
+<div id="quiz" class="section">
+
+<h3>❓ Quiz</h3>
+
+<div class="card">
+<pre id="quiz_output"></pre>
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ================= SCRIPT ================= -->
+<script>
+
+/* -------- Navigation -------- */
+
+function showSection(section){
+document.querySelectorAll(".section")
+.forEach(s => s.classList.remove("active"));
+
+document.getElementById(section)
+.classList.add("active");
+}
+
+
+/* -------- Safe Content Parser -------- */
+
+function extract(text,start,end){
+let s=text.indexOf(start);
+let e=end ? text.indexOf(end) : text.length;
+
+if(s===-1) return "";
+return text.substring(
+s+start.length,
+e===-1?text.length:e
+).trim();
+}
+
+function parseContent(text){
+
+return{
+def: extract(text,"DEFINITION:","SYNTAX:"),
+syntax: extract(text,"SYNTAX:","EXAMPLE:"),
+example: extract(text,"EXAMPLE:","OUTPUT:"),
+output: extract(text,"OUTPUT:",null)
+};
+}
+
+
+/* -------- AI CALL -------- */
+
+async function learn(){
+
+let topic=document.getElementById("topic").value.trim();
+
+if(!topic){
+alert("Please enter a topic");
+return;
+}
+
+document.getElementById("loading").style.display="block";
+
+try{
+
+let res=await fetch("/learn",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({topic})
+});
+
+let data=await res.json();
+
+let parsed=parseContent(data.explanation);
+
+document.getElementById("definition").innerText=parsed.def;
+document.getElementById("syntax").innerText=parsed.syntax;
+document.getElementById("example").innerText=parsed.example;
+document.getElementById("output").innerText=parsed.output;
+
+document.getElementById("quiz_output").innerText=data.quiz;
+
+showSection("explain");
+
+}catch(err){
+alert("Error loading lesson");
+console.error(err);
+}
+
+document.getElementById("loading").style.display="none";
+}
+
+</script>
+
+</body>
+</html>
